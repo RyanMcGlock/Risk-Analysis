@@ -1,7 +1,7 @@
 ## Risk-Analysis
 ##### Masters Project Work - MATLAB
 ##### 1) Implemented a procedure to estimate the VaR and the ES of the P&L at 95% confidence level up to an horizon of 12 months (so you have to provide 12 VaR and 12 ES estimates). Under the assumption that the P&L over different months are independent and identically distributed according to the above distribution.
-##### 2) Used convolution to build the distribution at the desired horizon, without using Monte Carlo simulation. Confirmed the results with part 1
+##### 2) Used convolution to build the distribution at the desired horizon, without using Monte Carlo simulation. Confirmed the results with above part 1
 ```matlab
 %Given the following PnL and associated probaility of each PnL
 probs = [0.05 0.15 0.2 0.3 0.25 0.05];
