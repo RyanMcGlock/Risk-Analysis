@@ -71,12 +71,13 @@ T.Properties.RowNames = {'VaRMC' 'ESMC' 'VaRConv' 'ESConv'}
 
 ##### This next section computes the VaR, Expected Shortfall and different risk measure for a stock portfolio and then a stock + Option portfolio (Options add Non-linear element)
 ##### This section below does some analysis on the stock data, calculates some statisitcs, calculates the VaR and ES with both a Gaussian (parametic) and Bootstrapping (non-parametic)
+##### The portfolio is made of of Verizon (long 20 shares), Intel (long 10 shares), JPMorgan (long 10 shares), Apple (long 10 shares), Microsoft (long 4 shares), The Procter & Gamble Company (short 5 shares). The data sample refers to daily quotations for the period Jan 1st, 2012 to 9th of February 2018 (included)
+##### NOTE: Not all functions are shown below, please see attached m files if you wish
 ```matlab
-%ANALYSIS OF STOCK PORFOLIO ONLY
+%ANALYSIS OF STOCK PORFOLIO ONLY (6 stocks)
 % Load the data
-load AAPLData.mat;load MSFTData.mat;load PGData.mat;load VZData.mat;
-load INTCData.mat;load JPMData.mat
-%SHARES - %VZ, INTC, JPM, APPL, MSFT, PG
+load AAPLData.mat;load MSFTData.mat;load PGData.mat;load VZData.mat;load INTCData.mat;load JPMData.mat
+%NUMBER of SHARES - %VZ, INTC, JPM, APPL, MSFT, PG
 StockNumbers = [20, 10, 10, 10, 4, -5];
 %Stock prices in order from loaded data
 StockPrices = getStockPrices(VZ,INTC,JPM,AAPL,MSFT,PG);
@@ -85,13 +86,13 @@ StockValues = getStockValues(StockPrices, StockNumbers);
 %Initial portfolio value
 [PortfolioValues, PortfolioReturns] = computePortfolioValue(StockNumbers, StockPrices); 
 
-%Plots, Skewness, Kurtosis, Bera-Jacque
+%Statistical Analysis - Plots, Skewness, Kurtosis, Bera-Jacque
 [SK, K, JB] = getPlots(PortfolioReturns);
 
 %VarianceRatio
 [VRMontly,zscoreM,VRYearly,zscoreY] = computeVRTest(PortfolioReturns);
 
-%%%%%%%% Gaussian Var Function
+%%%%%%%% Gaussian VaR Function
 function GaussianVaR = GaussVaR(logreturns, alpha)
     z = norminv(1-alpha);
     mu = mean(logreturns);
@@ -100,8 +101,10 @@ function GaussianVaR = GaussVaR(logreturns, alpha)
     ExpectedShortfall = -(mu - (sd/(1-alpha))*normpdf(z));
     GaussianVaR = [Gaussian ExpectedShortfall];
 end
-%%%%%%%% Bootstrap Functions
+
+%%%%%%%% Bootstrap VaR Function
 function BootStrapVaR = BootVaR(logreturns, nine, m) 
+    %Interpolation 
     n=length(logreturns);
     per = (1-nine)*n;
     perfl = floor(per);
@@ -124,19 +127,20 @@ function BootStrapVaR = BootVaR(logreturns, nine, m)
     BootStrapVaR = [BootStrapVaRavg, ESBootstrap];
 end
 
-%Define alpha to user input
+%Define alpha the users wants for VaR calculation - taking 99% in this case
+%Carry out VaR analysis - Kupiec test, conditional test, Independance of VaR violations
 starty = 625;alpha= 0.99; 
-%WANT TO DO VAR METHODS PLUS ANALYSIS - 90alpha
-[VaRBoot90, violationsBoot90, violationsNumBoot90] = VaRViolations(1, alpha, starty, PortfolioReturns,1);
-[VaRGauss90,violationsGauss90, violationsNumGauss90] = VaRViolations(2, alpha, starty, PortfolioReturns,2);
-[KupiecB90, outcomeB90] = Kupiec(violationsNumBoot90, alpha, VaRBoot90); %Kupiec Test of Var Model
-[KupiecG90, outcomeG90] = Kupiec(violationsNumGauss90, alpha, VaRGauss90);
-[LRIndB90, outcomeIB90, LRccB90, outcomeCB90] = independence(VaRBoot90, violationsBoot90, KupiecB90); %Independence Tests
-[LRIndG90, outcomeIG90, LRccG90, outcomeCG90] = independence(VaRGauss90, violationsGauss90, KupiecG90);
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[VaRBoot99, vioBoot99, vioNumBoot99] = VaRViolations(1, alpha, starty, PortfolioReturns, 3);
+[VaRGauss99,vioGauss99, vioNumGauss99] = VaRViolations(2, alpha, starty, PortfolioReturns, 4);
+[KupiecBoot99, statB99] = Kupiec(vioNumBoot99, alpha, VaRBoot99); %Kupiec Test of Var Model
+[KupiecGauss99, statG99] = Kupiec(vioNumGauss99, alpha, VaRGauss99);
+[LRIndB99, statIB99, LRccB99, outcomeCB99] = independence(VaRBoot99, vioBoot99, KupiecBoot99); %Independence Tests
+[LRIndG99, statIG99, LRccG99, outcomeCG99] = independence(VaRGauss99, vioGauss99, KupiecGauss99);
+```
+##### The next sections combines the above 6 stocks with options, which ofcourse changes the way we can compute our risk due to non-linearity of Options within the portfolio.
+##### The Options portfolio include 1) short apple 7 calls, strike at 140, expiry on April 20th 2018 2) MSFT: long 6 puts at strike of 95, expiry on July 20st 2018 and 3)PG: long 10 calls at strike 85, expiry on June 16, 2018
+##### This time the 10 day VaR was calculated as of 9th February 2018 along with marginal and component VaR
+```matlab
 %Now compute the Var using the stocks and options as a Portfolio
 % Load the data that was downloaded from Yahoo!Finance
 load VZData.mat;load INTCData.mat;load JPMData.mat;load AAPLData.mat
@@ -166,8 +170,10 @@ fwdDays = 10;
 OptionData(1,6) = LInt(OptionData(1,4)-fwdDays);
 OptionData(2,6)= LInt(OptionData(2,4)-fwdDays);
 OptionData(3,6)= LInt(OptionData(3,4)-fwdDays); 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+```
+##### The VaR is computed firsdtly by historical simulation and full revaluation and secondly historical simulation and delta-gamma approximation
+##### Note again the functions used are attached as m files
+```matlab
 %Historical Full Revaluation Approximation
 % Calculate new option price using BS and the new prices computed above
 for i=1:length(StockLogReturns)
