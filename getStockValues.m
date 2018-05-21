@@ -1,0 +1,16 @@
+function StockValues = getStockValues(StockPrices,StockShares)
+%Get stock values. Number of shares multiplied by the price.    
+    VZVal = StockShares(1)*StockPrices(:,1);
+    INTCVal = StockShares(2)*StockPrices(:,2);
+    JPMVal = StockShares(3)*StockPrices(:,3);
+    APPLVal = StockShares(4)*StockPrices(:,4);
+    MSFTVal = StockShares(5)*StockPrices(:,5);
+    PGVal = StockShares(6)*StockPrices(:,6);
+    
+    StockValues =  [VZVal, ...
+                    INTCVal, ...
+                    JPMVal, ...
+                    APPLVal, ...
+                    MSFTVal, ...
+                    PGVal];
+end
